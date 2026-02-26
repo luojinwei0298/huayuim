@@ -1,0 +1,33 @@
+version: '3.7'
+services:
+  wukongim: # WuKongIM服务
+    image: registry.cn-shanghai.aliyuncs.com/wukongim/wukongim:v2
+    environment:
+      - "WK_CLUSTER_NODEID=1002"
+      - "WK_TOKENAUTHON=true"  # 开启token认证，生产环境强烈建议开启
+      - "WK_MANAGER_TOKEN=Tsdd@2026#Wukong" # 新增：自定义固定的manager_token
+      - "WK_EXTERNAL_IP=81.71.139.29" # 服务器外网ip
+      - "WK_CLUSTER_APIURL=http://81.71.139.29:5001" # 节点内部通信api url地址
+      - "WK_CLUSTER_SERVERADDR=81.71.139.29:11110" # 节点内部通信请求地址
+      - "WK_EXTERNAL_WSADDR=ws://110.42.223.213:15200"  # web端访问的ws长连接地址，使用node1的负载均衡地址
+      - "WK_EXTERNAL_TCPADDR=110.42.223.213:15100"  # app端访问的tcp长连接地址，使用node1的负载均衡地址
+      - "WK_CLUSTER_SEED=1001@110.42.223.213:11110" # 种子节点，使用node1作为种子节点
+      - "WK_CLUSTER_DISCOVERY=static" # 使用静态发现模式
+      - "WK_TRACE_PROMETHEUSAPIURL=http://110.42.223.213:9090" # prometheus监控地址，使用node1的地址
+      - "WK_MODE=release" # release模式
+    healthcheck:
+      test: "wget -q -Y off -O /dev/null http://localhost:5001/health > /dev/null 2>&1"
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    restart: always
+    volumes:
+      - ./wukongim_data:/root/wukongim # 数据挂载到物理机的目录
+    ports:
+      - "15001:5001"  # http api 端口
+      - "15100:5100"  # tcp 端口
+      - "15200:5200"  # websocket 端口
+      - "15300:5300"  # 管理端端口
+      - "15172:5172"  # demo端口
+    depends_on:
+      - wukongim
